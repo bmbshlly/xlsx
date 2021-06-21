@@ -14,7 +14,7 @@ const cors = require('cors');
 const columns = require('./config/model');
 
 // middlewares
-app.use(cors());
+app.options('*', cors());
 app.use(express.json());
 
 // api routes
