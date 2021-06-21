@@ -56,7 +56,10 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
                 if (err) { console.log(err.stack); }
             });
         }
-        Promise.all(promises).then(() => res.send('done'));
+        Promise.all(promises).then(() => {
+            fs.unlinkSync(filePath);
+            res.send('done')
+        });
     }
     catch{ (err) => console.log(err) }
 });
