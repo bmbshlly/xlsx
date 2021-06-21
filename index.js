@@ -1,52 +1,80 @@
 //import
-require('dotenv').config()
 const express = require('express');
-const cors = require('cors');
-const { Pool } = require('pg');
-const upload = require('./config/multer.config.js');
 const path = require('path');
 const xlsx = require('xlsx');
 const fs = require('fs');
-const excelToJson = require('convert-excel-to-json');
 
 // app config
+require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 9000;
-const DATABASE_URL = process.env.DATABASE_URL;
-const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
-const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
-
+const pool = require('./config/database');
+const upload = require('./config/multer.config');
+const cors = require('cors');
+const columns = require('./config/model');
 
 // middlewares
 app.use(cors());
 app.use(express.json());
 
-
 // api routes
 app.get('/', (req, res) => { res.send('Hello World!'); });
 
-app.post('/api/file/upload', upload.single('excel'), (req, res) => {
+app.get('/rows', async(req, res) => { 
     try{
-        const filePath = path.resolve() + "/uploads/" + req.file.filename;
-        const workbook = excelToJson({ sourceFile: filePath });        
-        console.log(workbook);
-        res.send('done');
+        const { rows } = await pool.query(`SELECT * FROM excel LIMIT ${process.env.MAX_ROWS}`);
+        res.send(rows);
     }
-    catch{}
+    catch{ (err) => console.log(err) }
 });
 
-app.post('/setUserPreferences', (req, res) => {
-    const username = req.body.username;
-    const preferences = JSON.stringify(req.body.preferences);
-    pool.query(`UPDATE register SET preference = '${preferences}' WHERE username = '${username}'`, (err, res) => {
-        if (err) { console.log(err.stack); }
-    });
-    res.send("preference set");
+app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
+    try{
+        const filePath = path.resolve() + "/uploads/" + req.file.filename;
+        const workbook = xlsx.readFile(filePath);
+        const sheet_name_list = workbook.SheetNames;
+        const jsonPagesArray = [];
+        sheet_name_list.forEach((sheet) => {
+        const jsonPage = {
+            name: sheet,
+            content: JSON.parse(JSON.stringify(xlsx.utils.sheet_to_json(workbook.Sheets[sheet],{defval:""})))
+        };
+        jsonPagesArray.push(jsonPage);
+        });
+        const rows = jsonPagesArray[0].content;
+        const promises = [];
+        for (row of rows) {
+            let insert_row = Object.values(row);
+            if (insert_row.length != columns.length)
+                insert_row.push([...Array(columns.length-insert_row.length).fill(null)]) 
+            let query = `
+            INSERT INTO excel ("${columns.join('\",\"')}") VALUES ('${insert_row.join('\',\'')}')
+            ON CONFLICT ("Country","NonProfitName") DO UPDATE
+            SET ("${columns.join('\",\"')}") = ('${insert_row.join('\',\'')}');
+            `;
+            promises.push(pool.query(query), (err, res) => {
+                if (err) { console.log(err.stack); }
+            });
+        }
+        Promise.all(promises).then(() => res.send('done'));
+    }
+    catch{ (err) => console.log(err) }
+});
+
+app.post('/filters', async(req, res) => {
+    const filters = req.body;
+    const keys = Object.keys(filters);
+    let query = `SELECT * FROM excel WHERE`;
+    query += ` "${keys[0]}" IN ('${filters[keys[0]].join('\',\'')}')`;
+    for (let i = 1; i < keys.length; i++) {
+        query += ` AND "${keys[i]}" IN ('${filters[keys[i]].join('\',\'')}')`;
+    }
+    query += ` LIMIT ${process.env.MAX_ROWS}`;
+    try{
+        const { rows } = await pool.query(query);
+        res.send(rows);
+    }
+    catch{ (err) => console.log(err) }
 });
 
 
