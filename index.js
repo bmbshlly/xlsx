@@ -10,11 +10,17 @@ const app = express();
 const port = process.env.PORT || 9000;
 const pool = require('./config/database');
 const upload = require('./config/multer.config');
-const cors = require('cors');
+//const cors = require('cors');
 const columns = require('./config/model');
 
 // middlewares
-app.options('*', cors());
+//app.options('*', cors());
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "*");
+  res.header("Access-Control-Allow-Headers", "*");
+  next();
+});
 app.use(express.json());
 
 // api routes
