@@ -15,7 +15,7 @@ const columns = require('./config/model');
 
 // middlewares
 const corsOpts = {
-    origin: '*',
+    origin: ['*'],
     methods: ['*'],
     allowedHeaders: [
       'Content-Type',
