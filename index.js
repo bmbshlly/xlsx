@@ -72,16 +72,41 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
 
 app.post('/filters', async(req, res) => {
     const filters = req.body;
-    const keys = Object.keys(filters);
-    let query = `SELECT * FROM excel WHERE`;
-    query += ` "${keys[0]}" IN ('${filters[keys[0]].join('\',\'')}')`;
-    for (let i = 1; i < keys.length; i++) {
-        query += ` AND "${keys[i]}" IN ('${filters[keys[i]].join('\',\'')}')`;
+    const FocusAreas = [];
+    const Beneficiaries = [];
+    let query;
+    if(filters['FocusAreas'])
+        FocusAreas.push(...filters['FocusAreas']);
+    if(filters['Beneficiaries'])
+        Beneficiaries.push(...filters['Beneficiaries']);
+
+    includeFilter = (array, str) => {
+        if(!array.length)
+            return true
+        for(idx of array)
+            if(str.toLowerCase().includes(idx.toLowerCase()))
+                return true;
+        return false;
     }
-    query += ` LIMIT ${process.env.MAX_ROWS}`;
+
+    delete filters['FocusAreas'];
+    delete filters['Beneficiaries'];
+    console.log(FocusAreas, Beneficiaries);
+    const keys = Object.keys(filters);
+    if(keys.length) {
+        query = `SELECT * FROM excel WHERE "${keys[0]}" IN ('${filters[keys[0]].join('\',\'')}')`;
+        for (let i = 1; i < keys.length; i++)
+            query += ` AND "${keys[i]}" IN ('${filters[keys[i]].join('\',\'')}')`;
+        query += ` LIMIT ${process.env.MAX_ROWS}`;
+    }
+    else {
+        query = `SELECT * FROM excel LIMIT ${process.env.MAX_ROWS}`;
+    }
     try{
         const { rows } = await pool.query(query);
-        res.send(rows);
+        console.log(rows);
+        const result = rows.filter(row  => includeFilter(Beneficiaries, row['Beneficiaries']) && includeFilter(FocusAreas, row['FocusAreas']));
+        res.send(result);
     }
     catch{ (err) => console.log(err) }
 });
