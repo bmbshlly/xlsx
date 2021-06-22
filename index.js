@@ -19,6 +19,7 @@ const corsOpts = {
     methods: ['*'],
     allowedHeaders: [
       'Content-Type',
+      'enctype'
     ],
   };
 app.use(cors(corsOpts));
