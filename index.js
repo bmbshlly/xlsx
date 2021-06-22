@@ -10,20 +10,9 @@ const app = express();
 const port = process.env.PORT || 9000;
 const pool = require('./config/database');
 const upload = require('./config/multer.config');
-//const cors = require('cors');
 const columns = require('./config/model');
 
 // middlewares
-const corsOpts = {
-    origin: '*',
-    methods: ['*'],
-    allowedHeaders: [
-      'Content-Type',
-      'enctype'
-    ],
-  };
-
-//app.use(cors(corsOpts));
 app.use(express.json());
 app.use(function(req, res, next) {
 	res.header('X-Frame-Options','*');
@@ -33,7 +22,6 @@ app.use(function(req, res, next) {
 	res.header('Access-Control-Allow-Headers','X-Requested-With, X-HTTP-Method-Override, Content-Type, enctype, Accept');
 	next();
 });
-
 
 // api routes
 app.get('/', (req, res) => { res.send('Hello World!'); });
