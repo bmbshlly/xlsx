@@ -11,15 +11,13 @@ const port = process.env.PORT || 9000;
 const pool = require('./config/database');
 const upload = require('./config/multer.config');
 const columns = require('./config/model');
-const cors = require('cors');
 
 // middlewares
 app.use(express.json());
-app.use(cors());
 app.use(function(req, res, next) {
 	res.header('X-Frame-Options','*');
 	res.header('Access-Control-Allow-Credentials', true);
-	res.header('Access-Control-Allow-Origin', '*');
+	res.header('Access-Control-Allow-Origin', 'https://modest-yalow-ba400c.netlify.app');
 	res.header('Access-Control-Allow-Methods','GET,PUT,POST,DELETE');
 	res.header('Access-Control-Allow-Headers','X-Requested-With, X-HTTP-Method-Override, Content-Type, enctype, Accept');
 	next();
