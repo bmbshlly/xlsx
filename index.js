@@ -10,7 +10,7 @@ const app = express();
 const port = process.env.PORT || 9000;
 const pool = require('./config/database');
 const upload = require('./config/multer.config');
-const cors = require('cors');
+//const cors = require('cors');
 const columns = require('./config/model');
 
 // middlewares
@@ -23,7 +23,7 @@ const corsOpts = {
     ],
   };
 
-app.use(cors(corsOpts));
+//app.use(cors(corsOpts));
 app.use(express.json());
 app.use(function(req, res, next) {
 	res.header('X-Frame-Options','*');
