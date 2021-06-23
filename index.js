@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const xlsx = require('xlsx');
 const fs = require('fs');
+const excelToRow = require('./processor');
 
 // app config
 require('dotenv').config()
@@ -24,30 +25,33 @@ app.use(function(req, res, next) {
 });
 
 // api routes
-app.get('/', (req, res) => { res.send('Hello World!'); });
+app.get('/', (req, res) => { res.send('Hello folks, Goodera here!'); });
+
+app.get('/distinctCountry', async(req, res) => {
+    try{
+        const { rows } = await pool.query(`SELECT DISTINCT "Country" FROM excel`);
+        const result = rows.map((value) => value.Country);
+        res.send(result);
+    } catch{ (err) => {
+        res.send('failed');
+        console.log(err)
+    }} 
+});
 
 app.get('/rows', async(req, res) => { 
     try{
         const { rows } = await pool.query(`SELECT * FROM excel LIMIT ${process.env.MAX_ROWS}`);
         res.send(rows);
-    }
-    catch{ (err) => console.log(err) }
+    } catch{ (err) => {
+        res.send('failed');
+        console.log(err)
+    }}
 });
 
 app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
     try{
         const filePath = path.resolve() + "/uploads/" + req.file.filename;
-        const workbook = xlsx.readFile(filePath);
-        const sheet_name_list = workbook.SheetNames;
-        const jsonPagesArray = [];
-        sheet_name_list.forEach((sheet) => {
-        const jsonPage = {
-            name: sheet,
-            content: JSON.parse(JSON.stringify(xlsx.utils.sheet_to_json(workbook.Sheets[sheet],{defval:""})))
-        };
-        jsonPagesArray.push(jsonPage);
-        });
-        const rows = jsonPagesArray[0].content;
+        const rows = excelToRow(filePath);
         console.log(rows.length);
         const promises = [];
         for (row of rows) {
@@ -72,15 +76,18 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
             SET ("${columns.join('\",\"')}") = ('${insert_row.join('\',\'')}');
             `;
             promises.push(pool.query(query)
-            .then(() => console.log('done'))
+            .then()
             .catch(e => console.error('e.stack')));
         }
         Promise.all(promises).then(() => {
             fs.unlinkSync(filePath);
             res.send('finish');
         });
-    }
-    catch{ (err) => console.log(err) }
+    } catch{ (err) => {
+        res.send('failed');
+        fs.unlinkSync(filePath);
+        console.log(err);
+    } }
 });
 
 app.post('/filters', async(req, res) => {
@@ -117,10 +124,20 @@ app.post('/filters', async(req, res) => {
         const { rows } = await pool.query(query);
         const result = rows.filter(row  => includeFilter(Beneficiaries, row['Beneficiaries']) && includeFilter(FocusAreas, row['FocusAreas']));
         res.send(result);
-    }
-    catch{ (err) => console.log(err) }
+    } catch{ (err) => {
+        res.send('failed');
+        console.log(err)
+    }}
 });
 
+fs.readdir(path.resolve() + "/uploads/", (err, files) => {
+    if (err) throw err;
+    for (const file of files) {
+        fs.unlink(path.join(path.resolve() + "/uploads/", file), err => {
+          if (err) throw err;
+        });
+    }
+});
 
 // listen
 app.listen(port, () => console.log(`listening on localhost:${port}`));
