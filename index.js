@@ -112,7 +112,7 @@ app.post('/filters', async(req, res) => {
         query += ` LIMIT ${process.env.MAX_ROWS}`;
     }
     else {
-        query = `SELECT * FROM excel LIMIT ${process.env.MAX_ROWS}`;
+        query = `SELECT * FROM excel`;
     }
     try{
         const { rows } = await pool.query(query);
