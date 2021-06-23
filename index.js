@@ -133,6 +133,7 @@ app.post('/filters', async(req, res) => {
 fs.readdir(path.resolve() + "/uploads/", (err, files) => {
     if (err) throw err;
     for (const file of files) {
+        if(file!='.gitkeep')
         fs.unlink(path.join(path.resolve() + "/uploads/", file), err => {
           if (err) throw err;
         });
