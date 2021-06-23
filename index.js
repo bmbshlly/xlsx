@@ -56,8 +56,9 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
         const promises = [];
         for (row of rows) {
             let insert_row = Object.values(row);
-            if (insert_row.length < columns.length)
-                insert_row.push([...Array(columns.length-insert_row.length).fill(null)]);
+            if (insert_row.length <= columns.length)
+                insert_row.push(...Array(columns.length-insert_row.length).fill(null));
+            else{continue;}
             for(let idx = 0; idx < insert_row.length; idx++) {
                 if(typeof(insert_row[idx])=='string') {
                     let str = insert_row[idx];
@@ -77,7 +78,7 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
             `;
             promises.push(pool.query(query)
             .then()
-            .catch(e => console.error('e.stack')));
+            .catch(e => console.error(e.stack)));
         }
         Promise.all(promises).then(() => {
             fs.unlinkSync(filePath);
