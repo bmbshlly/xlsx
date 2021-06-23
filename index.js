@@ -109,7 +109,6 @@ app.post('/filters', async(req, res) => {
         query = `SELECT * FROM excel WHERE "${keys[0]}" IN ('${filters[keys[0]].join('\',\'')}')`;
         for (let i = 1; i < keys.length; i++)
             query += ` AND "${keys[i]}" IN ('${filters[keys[i]].join('\',\'')}')`;
-        query += ` LIMIT ${process.env.MAX_ROWS}`;
     }
     else {
         query = `SELECT * FROM excel`;
