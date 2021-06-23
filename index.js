@@ -27,6 +27,7 @@ app.use(function(req, res, next) {
 // api routes
 app.get('/', (req, res) => { res.send('Hello folks, Goodera here!'); });
 
+// GET /distinctCountry -> returns all distinct countries
 app.get('/distinctCountry', async(req, res) => {
     try{
         const { rows } = await pool.query(`SELECT DISTINCT "Country" FROM excel`);
@@ -38,6 +39,7 @@ app.get('/distinctCountry', async(req, res) => {
     }} 
 });
 
+// GET /rows -> returns MAX_ROW(300) entry
 app.get('/rows', async(req, res) => { 
     try{
         const { rows } = await pool.query(`SELECT * FROM excel LIMIT ${process.env.MAX_ROWS}`);
@@ -48,6 +50,7 @@ app.get('/rows', async(req, res) => {
     }}
 });
 
+// POST /api/file/upload -> upload file and rows are insert/update in database
 app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
     try{
         const filePath = path.resolve() + "/uploads/" + req.file.filename;
@@ -91,6 +94,7 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
     } }
 });
 
+// POST /filters -> send filters and receive data accordingly
 app.post('/filters', async(req, res) => {
     try{
         const filters = req.body;
@@ -130,6 +134,7 @@ app.post('/filters', async(req, res) => {
     }}
 });
 
+// remove all stored uploaded excel
 fs.readdir(path.resolve() + "/uploads/", (err, files) => {
     if (err) throw err;
     for (const file of files) {
