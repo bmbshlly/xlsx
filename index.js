@@ -48,23 +48,34 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
         jsonPagesArray.push(jsonPage);
         });
         const rows = jsonPagesArray[0].content;
+        console.log(rows.length);
         const promises = [];
         for (row of rows) {
             let insert_row = Object.values(row);
             if (insert_row.length != columns.length)
-                insert_row.push([...Array(columns.length-insert_row.length).fill(null)]) 
+                insert_row.push([...Array(columns.length-insert_row.length).fill(null)]);
+            for(let idx = 0; idx < insert_row.length; idx++) {
+                let str = insert_row[idx];
+                let progress = 0;
+                while(str.indexOf(`'`, progress) >= 0) {
+                    progress = str.indexOf(`'`, progress)+1;
+                    str = [str.slice(0, progress), `'`, str.slice(progress)].join('');
+                    progress += 1;
+                }
+                insert_row[idx] = str;
+            }
             let query = `
             INSERT INTO excel ("${columns.join('\",\"')}") VALUES ('${insert_row.join('\',\'')}')
             ON CONFLICT ("Country","NonProfitName") DO UPDATE
             SET ("${columns.join('\",\"')}") = ('${insert_row.join('\',\'')}');
             `;
-            promises.push(pool.query(query), (err, res) => {
-                if (err) { console.log(err.stack); }
-            });
+            promises.push(pool.query(query)
+            .then()
+            .catch(e => console.error('e.stack')));
         }
         Promise.all(promises).then(() => {
             fs.unlinkSync(filePath);
-            res.send('done')
+            res.send('done');
         });
     }
     catch{ (err) => console.log(err) }
@@ -91,7 +102,6 @@ app.post('/filters', async(req, res) => {
 
     delete filters['FocusAreas'];
     delete filters['Beneficiaries'];
-    console.log(FocusAreas, Beneficiaries);
     const keys = Object.keys(filters);
     if(keys.length) {
         query = `SELECT * FROM excel WHERE "${keys[0]}" IN ('${filters[keys[0]].join('\',\'')}')`;
@@ -104,7 +114,6 @@ app.post('/filters', async(req, res) => {
     }
     try{
         const { rows } = await pool.query(query);
-        console.log(rows);
         const result = rows.filter(row  => includeFilter(Beneficiaries, row['Beneficiaries']) && includeFilter(FocusAreas, row['FocusAreas']));
         res.send(result);
     }
