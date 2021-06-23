@@ -52,17 +52,19 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
         const promises = [];
         for (row of rows) {
             let insert_row = Object.values(row);
-            if (insert_row.length != columns.length)
+            if (insert_row.length < columns.length)
                 insert_row.push([...Array(columns.length-insert_row.length).fill(null)]);
             for(let idx = 0; idx < insert_row.length; idx++) {
-                let str = insert_row[idx];
-                let progress = 0;
-                while(str.indexOf(`'`, progress) >= 0) {
-                    progress = str.indexOf(`'`, progress)+1;
-                    str = [str.slice(0, progress), `'`, str.slice(progress)].join('');
-                    progress += 1;
+                if(typeof(insert_row[idx])=='string') {
+                    let str = insert_row[idx];
+                    let progress = 0;
+                    while(str.indexOf(`'`, progress) >= 0) {
+                        progress = str.indexOf(`'`, progress)+1;
+                        str = [str.slice(0, progress), `'`, str.slice(progress)].join('');
+                        progress += 1;
+                    }
+                    insert_row[idx] = str;
                 }
-                insert_row[idx] = str;
             }
             let query = `
             INSERT INTO excel ("${columns.join('\",\"')}") VALUES ('${insert_row.join('\',\'')}')
@@ -70,12 +72,12 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
             SET ("${columns.join('\",\"')}") = ('${insert_row.join('\',\'')}');
             `;
             promises.push(pool.query(query)
-            .then()
+            .then(() => console.log('done'))
             .catch(e => console.error('e.stack')));
         }
         Promise.all(promises).then(() => {
             fs.unlinkSync(filePath);
-            res.send('done');
+            res.send('finish');
         });
     }
     catch{ (err) => console.log(err) }
