@@ -91,36 +91,35 @@ app.post('/api/file/upload', upload.single('excel'), async(req, res) => {
 });
 
 app.post('/filters', async(req, res) => {
-    const filters = req.body;
-    const FocusAreas = [];
-    const Beneficiaries = [];
-    let query;
-    if(filters['FocusAreas'])
-        FocusAreas.push(...filters['FocusAreas']);
-    if(filters['Beneficiaries'])
-        Beneficiaries.push(...filters['Beneficiaries']);
-
-    includeFilter = (array, str) => {
-        if(!array.length)
-            return true
-        for(idx of array)
-            if(str.toLowerCase().includes(idx.toLowerCase()))
-                return true;
-        return false;
-    }
-
-    delete filters['FocusAreas'];
-    delete filters['Beneficiaries'];
-    const keys = Object.keys(filters);
-    if(keys.length) {
-        query = `SELECT * FROM excel WHERE "${keys[0]}" IN ('${filters[keys[0]].join('\',\'')}')`;
-        for (let i = 1; i < keys.length; i++)
-            query += ` AND "${keys[i]}" IN ('${filters[keys[i]].join('\',\'')}')`;
-    }
-    else {
-        query = `SELECT * FROM excel`;
-    }
     try{
+        const filters = req.body;
+        const FocusAreas = [];
+        const Beneficiaries = [];
+        let query;
+        if(filters['FocusAreas'])
+            FocusAreas.push(...filters['FocusAreas']);
+        if(filters['Beneficiaries'])
+            Beneficiaries.push(...filters['Beneficiaries']);
+
+        includeFilter = (array, str) => {
+            if(!array.length)
+                return true
+            for(idx of array)
+                if(str.toLowerCase().includes(idx.toLowerCase()))
+                    return true;
+            return false;
+        }
+
+        delete filters['FocusAreas'];
+        delete filters['Beneficiaries'];
+        const keys = Object.keys(filters);
+        if(keys.length) {
+            query = `SELECT * FROM excel WHERE "${keys[0]}" IN ('${filters[keys[0]].join('\',\'')}')`;
+            for (let i = 1; i < keys.length; i++)
+                query += ` AND "${keys[i]}" IN ('${filters[keys[i]].join('\',\'')}')`;
+        } else {
+            query = `SELECT * FROM excel`;
+        }
         const { rows } = await pool.query(query);
         const result = rows.filter(row  => includeFilter(Beneficiaries, row['Beneficiaries']) && includeFilter(FocusAreas, row['FocusAreas']));
         res.send(result);
