@@ -1,22 +1,25 @@
 const columns = [
     'NonProfitName',
     'Country',
-    'About',
+    'Onboarded',
+    'NonprofitPOC',
+    'NonprofitPOCEmail',
+    'Phonenumber',
+    'CampaignAssociated',
     'FocusAreas',
     'Beneficiaries',
     'GooderaPOC',
-    'NonprofitPOC',
-    'NonprofitPOCEmail',
-    'Address',
+    'TeamOpportunities',
+    'IndividualOpportunities',
     'City',
     'State',
-    'Onboarded',
-    'Phonenumber',
-    'TeamOpportunities',
-    'CampaignAssociated',
-    'IndividualOpportunities',
+    'Address',
     'WebsiteLink',
-    'LastOutReachedOn'
+    'About',
+    'LastOutReachedOn',    
 ]
 
 module.exports = columns;
+
+// after phonenumber "LastContacted"==LastOutReachedOn
+//last "Outreach","Benevity"
